@@ -1,183 +1,85 @@
 ---
 name: vibe-coding-context
-description: Lightweight file-based context workflow for Trae Work Desktop vibe coding. Use when building or iterating on small-to-medium tools, MVPs, dashboards, scripts with UI, or feature work that spans multiple files, uses existing project documents, needs continuation across chats, or benefits from progressive disclosure of requirements, product context, architecture, UI guidelines, decisions, and current task state.
+description: 按 tiny、light、medium、heavy 四档管理任务上下文，并在轻量 ai 文件流与重型 .planning 证据流之间进行唯一选择。用于多文件编码、需要读取需求或架构文档、带验收测试、研究审计迁移、复杂排错以及可能跨会话继续的任务。
 ---
 
 # Vibe Coding Context
 
-Use this skill as a light context operating system for small-to-medium coding projects. Keep the user in flow while preserving enough state to resume reliably.
+## 何时使用本 skill
 
-## Core Rule
+每次收到任务时先分级，再用唯一档位完成编码、研究、恢复和验收；简单任务保持零负担，复杂任务保留可恢复的计划与证据。
 
-Prefer useful momentum over heavy process.
+## 第一步：任务分级
 
-Use file memory only when it reduces confusion, prevents repeated explanation, or makes a future chat easier to resume. Do not turn small edits into project management.
+逐项判断并记录命中项：
 
-## When To Activate
+| 判定项 | 说明 |
+|---|---|
+| A. 涉及文件数 ≥ 3 | 跨模块修改 |
+| B. 需要读现有架构/UI/需求文档才能动手 | 有前置上下文 |
+| C. 预计工具调用次数 > 5 | 工作量指标 |
+| D. 涉及研究、审计、迁移、跨阶段开发 | planning 的典型场景 |
+| E. 有明确验收标准或测试要求 | 完成需要门禁 |
+| F. 容易被中断或跨会话继续 | 需要可恢复性 |
 
-Activate for tasks that meet any of these conditions:
+按以下优先级确定唯一档位：
 
-- The task touches 3 or more files.
-- The task spans product behavior, UI, architecture, data flow, or tests.
-- The user says to continue from project context, vibe code, resume, plan with files, or work from docs.
-- A new feature, MVP, tool, workflow, or multi-step fix is being built.
-- The work is likely to continue in another Trae Work chat.
+| 档位 | 判定规则 |
+|---|---|
+| heavy | 命中 D 或 F，或总命中数 ≥ 5 |
+| medium | 未达到 heavy，且命中 E，或总命中数为 3–4 |
+| light | 未达到 medium/heavy，命中 1–2 项且全部属于 A/B/C |
+| tiny | 全部不命中 |
 
-Skip for:
+同一时刻只允许一个活动档位。需要字段说明或恢复细节时读取 [reference.md](reference.md)。
 
-- Single-file edits.
-- Tiny text, style, or configuration changes.
-- One-off explanations that do not need persistence.
+## 第二步：按档位执行
 
-## Project Context Model
+### tiny
 
-Do not require a fixed documentation structure.
+- 不创建 `ai/` 或 `.planning/`。
+- 直接完成局部修改和必要验证。
+- 完成时无需规划检查。
 
-Respect the user's existing upfront project documents, whatever their names are. They may be in Chinese or English, may live in the project root or a docs folder, and may include requirement docs, product notes, business workflows, architecture drafts, UI rules, screenshots, research notes, or other context files.
+### light
 
-Use this skill to create a lightweight map over those documents, not to replace them.
+- 仅创建或更新 `ai/task-brief.md`，使用 `templates/ai/task-brief.md`。
+- 写入命中项、目标、范围、当前步骤和状态；仅在方向或范围变化时更新。
+- B 命中时先读取项目已有 `AGENTS.md`、上下文索引和当前任务必需的真实文档。
+- 交付结果并由用户确认后关闭任务。
 
-Preferred optional structure:
+### medium
 
-```text
-AGENTS.md
-docs/context-index.md  # optional document map
-docs/decisions.md      # optional durable decisions
-ai/task-brief.md
-ai/progress.md
-ai/findings.md
-```
+- 创建或更新 `ai/task-brief.md`、`ai/progress.md`、`ai/findings.md`，不得创建 `.planning/`。
+- task brief 保存目标、范围、验收标准和当前步骤；progress 在自然里程碑、测试和交接时更新；findings 只保存有复用价值的事实、临时决策和已解决问题。
+- B 命中时按索引渐进读取真实项目文档，不把 `ai/` 文件当作项目事实来源。
+- 完成前逐项勾选 task brief 的验收标准；存在未满足项时不得宣称完成。
 
-The templates in `assets/templates/` are optional scaffolds. Use them only when the project does not already have equivalent documents or when the user asks to initialize a standard structure.
+### heavy
 
-If existing docs are present, do not duplicate or rename them. Create or update only `docs/context-index.md` to point at the real files.
+- 仅使用 `.planning/<任务名>/plan.md`、`progress.md`、`findings.md`，不得同时更新 `ai/`。
+- 显式运行 `scripts/init-planning.ps1` 初始化三文件，并使用命令输出的 `PLANNING_DIR`。
+- plan 保存目标、范围、验收、阶段、关键决策与阻塞；progress 保存动作、测试和交接；findings 按事实、推论、来源、日期、可信度保存证据。
+- 在阶段切换、完成证据块、查看图片/PDF、测试结束或交接前更新对应文件。
+- 完成时必须同时满足：验收标准全部勾选、测试记录全部通过、所有阶段状态均为 `complete`。
 
-## Progressive Disclosure
+## 升级规则
 
-Do not read every project document by default.
+- 范围扩大、出现 D/F、工具调用预估上升，或阻塞问题需要第三种处理方案时，立即重新执行分级 checklist。
+- tiny 升级到 light/medium 时，从升级时开始创建目标档位文件，不追溯迁移已完成内容。
+- light 升级到 medium 时，保留 `ai/task-brief.md`，只补建 `ai/progress.md` 和 `ai/findings.md`。
+- 任意 `ai/` 档位升级到 heavy 时，在原 `ai/task-brief.md` 顶部加入：
 
-1. Read `AGENTS.md` if present.
-2. Read `docs/context-index.md` if present.
-3. If no index exists, inspect filenames and nearby docs briefly, then create a minimal index if the task is medium-sized or likely to continue.
-4. Choose only the relevant real documents for the current task:
-   - Product scope: requirement docs, PRDs, feature lists, user stories.
-   - Background and constraints: project context, business notes, workflow docs.
-   - Data flow or module boundaries: architecture docs, technical notes, API notes.
-   - UI, components, layout, copy, or interaction: UI guidelines, design notes, screenshots.
-   - Prior tradeoffs: decision logs, meeting notes, implementation notes.
-5. Read `ai/task-brief.md`, `ai/progress.md`, and `ai/findings.md` when resuming or when the user asks to continue.
+  `> 已升级到 heavy，后续记录见 .planning/<任务名>/`
 
-## Context Index Rules
+- 写入升级行后立即冻结全部 `ai/` 文件；后续进度、证据和发现只写入 `.planning/`。
+- 不迁移旧文件内容，不回填两套记录，不重复原样执行失败动作。
+- 三种不同方案仍无法解除阻塞时，向用户说明尝试和错误并请求输入。
 
-`docs/context-index.md` is a map, not a source of truth.
+## 禁止事项
 
-Create it only when it helps the agent choose what to read. Keep paths to original documents. Do not summarize away important details unless the original is very long and the summary includes a clear pointer back to the source file.
-
-If the user already has a different index file, use that instead and do not create a duplicate.
-
-## Working Loop
-
-1. Classify the task as tiny, light, or medium.
-2. For tiny tasks, work directly and do not create planning files.
-3. For light or medium tasks, discover or update the context index before reading detailed docs.
-4. Create or update `ai/task-brief.md` with goal, scope, acceptance, current step, and open questions.
-5. Read only the docs needed for the current step.
-6. Implement normally.
-7. Update `ai/progress.md` after a natural milestone, not after every edit.
-8. Update `ai/findings.md` only for useful discoveries, blockers, resolved issues, or project facts.
-9. Move long-lived decisions into `docs/decisions.md` or the user's existing decision document.
-10. Before final delivery, verify the acceptance criteria and record checks in `ai/progress.md` when useful.
-
-## Update Policy
-
-Keep updates short.
-
-Update `ai/task-brief.md` when:
-
-- The goal, scope, acceptance criteria, or current step changes.
-- The user changes direction.
-- A blocker appears.
-
-Update `ai/progress.md` when:
-
-- A feature slice is complete.
-- Tests or checks have run.
-- The next step changes.
-- A chat is about to end and continuation is likely.
-
-Update `ai/findings.md` when:
-
-- A project fact was discovered.
-- A decision was made but may still be temporary.
-- An issue was resolved and should not be repeated.
-
-Update `docs/decisions.md` or the user's existing decision document when:
-
-- The decision should survive beyond the current task.
-- The decision affects architecture, data storage, UI conventions, libraries, or product scope.
-
-## Task Lifecycle
-
-Do not delete task memory files unless the user explicitly asks.
-
-`ai/task-brief.md` represents only the active task:
-
-- Keep it while the task is in progress.
-- When the task is complete, first record the result in `ai/progress.md`.
-- Then replace `ai/task-brief.md` with the next active task brief when a new task starts.
-- Do not silently erase an unfinished task brief.
-
-`ai/progress.md` keeps recent project work history:
-
-- Preserve it across tasks.
-- Append or update concise milestone entries.
-- Do not clear it between tasks.
-- If it becomes long, summarize older entries into a handoff summary or move them into `ai/archive/`.
-
-`ai/findings.md` keeps reusable working discoveries:
-
-- Preserve it across tasks.
-- Remove or compress stale items only after their useful content has been moved into project docs or decisions.
-
-Use `ai/archive/` only when history becomes too long for fast resume. Archive by summary, not by dumping every old line.
-
-## Resume Protocol
-
-When the user says to continue, resume, use project context, or opens a fresh chat:
-
-1. Read `AGENTS.md`.
-2. Read `docs/context-index.md` or the project's existing context map.
-3. Read `ai/task-brief.md`.
-4. Read `ai/progress.md`.
-5. Read `ai/findings.md`.
-6. Read only additional source docs needed for the next step.
-7. State the current goal and next action briefly, then continue.
-
-## User Interaction
-
-Ask the user only when a decision is blocking or risky.
-
-Prefer making a reasonable local decision when:
-
-- The existing docs or code imply the answer.
-- The decision is easy to reverse.
-- The task can continue without changing product scope.
-
-Ask before:
-
-- Changing product scope.
-- Choosing a paid external service.
-- Removing or rewriting large parts of the app.
-- Making a design or architecture decision that conflicts with project docs.
-
-## Trae Work Notes
-
-- Treat `AGENTS.md` as the always-on project entry point.
-- Treat this skill as the on-demand workflow.
-- Treat existing project documents as project truth, regardless of naming.
-- Treat `docs/context-index.md` as a pointer map.
-- Treat `ai/` as current task memory.
-- Do not rely on Claude-specific hooks, `.claude/projects`, or session logs.
-- Hooks are optional and should not be required for this workflow.
-
-For detailed workflow guidance, read `references/workflow.md` only when implementing or adjusting the workflow itself.
+- 禁止同一任务同时写入 `ai/` 和 `.planning/`。
+- 禁止 tiny 创建任何规划文件或目录。
+- 禁止把上下文索引或 `ai/` 摘要当作原始需求、架构、UI 或业务事实。
+- 禁止引入 hooks、会话日志解析、自动 Stop 或隐式生命周期机制。
+- 禁止为匹配模板而复制、重命名或覆盖用户已有项目文档。
